@@ -1,6 +1,6 @@
 # Project Manifest: go-api-management
 
-Generated at: `2026-05-23 20:42:19`
+Generated at: `2026-05-23 20:47:44`
 
 ## 🏛️ Directory Tree Structure
 
@@ -10,17 +10,24 @@ go-api-management/
 │   ├── adapters/
 │   │   ├── crypto/
 │   │   │   └── pkce.go
-│   │   └── gateway/
-│   │       └── auth0_gateway.go
+│   │   ├── gateway/
+│   │   │   └── auth0_gateway.go
+│   │   ├── handler/
+│   │   │   ├── auth_handler.go
+│   │   │   └── middleware.go
+│   │   └── repository/
+│   │       └── sql_session_repository.go
 │   └── core/
 │       ├── domain/
 │       │   ├── errors.go
 │       │   ├── session.go
 │       │   ├── token.go
 │       │   └── user.go
-│       └── ports/
-│           ├── auth_provider.go
-│           └── session_repo.go
+│       ├── ports/
+│       │   ├── auth_provider.go
+│       │   └── session_repo.go
+│       └── services/
+│           └── auth_service.go
 ├── migrations/
 │   └── schema.sql
 ├── plan/
@@ -48,8 +55,8 @@ go-api-management/
 | File Name | Rel Path | Size (Bytes) | Last Modified | Architectural Purpose |
 | :--- | :--- | :--- | :--- | :--- |
 | `AI_SYSTEM_MANIFEST.md` | [`AI_SYSTEM_MANIFEST.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/AI_SYSTEM_MANIFEST.md) | 2449 | 2026-05-23 19:53:51 | Repository Core Metadata |
-| `go.mod` | [`go.mod`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/go.mod) | 99 | 2026-05-23 20:41:44 | Repository Core Metadata |
-| `go.sum` | [`go.sum`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/go.sum) | 777 | 2026-05-23 20:41:44 | Repository Core Metadata |
+| `go.mod` | [`go.mod`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/go.mod) | 875 | 2026-05-23 20:47:04 | Repository Core Metadata |
+| `go.sum` | [`go.sum`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/go.sum) | 5077 | 2026-05-23 20:47:04 | Repository Core Metadata |
 | `schema.sql` | [`migrations/schema.sql`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/migrations/schema.sql) | 623 | 2026-05-23 20:19:17 | Repository Core Metadata |
 | `indexer.py` | [`tools/indexer.py`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/tools/indexer.py) | 4275 | 2026-05-23 20:02:23 | Developer Tooling / Script |
 | `roadmap.md` | [`plan/roadmap.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/plan/roadmap.md) | 5157 | 2026-05-23 20:11:21 | Repository Core Metadata |
@@ -60,7 +67,11 @@ go-api-management/
 | `session.go` | [`internal/core/domain/session.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/core/domain/session.go) | 741 | 2026-05-23 20:18:50 | Go Source Code / Business Logic |
 | `token.go` | [`internal/core/domain/token.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/core/domain/token.go) | 308 | 2026-05-23 20:18:55 | Go Source Code / Business Logic |
 | `user.go` | [`internal/core/domain/user.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/core/domain/user.go) | 2061 | 2026-05-23 20:19:02 | Go Source Code / Business Logic |
+| `auth_service.go` | [`internal/core/services/auth_service.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/core/services/auth_service.go) | 5133 | 2026-05-23 20:46:38 | Go Source Code / Business Logic |
+| `auth_handler.go` | [`internal/adapters/handler/auth_handler.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/handler/auth_handler.go) | 7756 | 2026-05-23 20:47:25 | Go Source Code / Business Logic |
+| `middleware.go` | [`internal/adapters/handler/middleware.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/handler/middleware.go) | 2990 | 2026-05-23 20:47:36 | Go Source Code / Business Logic |
 | `pkce.go` | [`internal/adapters/crypto/pkce.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/crypto/pkce.go) | 1324 | 2026-05-23 20:29:17 | Go Source Code / Business Logic |
+| `sql_session_repository.go` | [`internal/adapters/repository/sql_session_repository.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/repository/sql_session_repository.go) | 4086 | 2026-05-23 20:46:31 | Go Source Code / Business Logic |
 | `auth0_gateway.go` | [`internal/adapters/gateway/auth0_gateway.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/gateway/auth0_gateway.go) | 8902 | 2026-05-23 20:29:27 | Go Source Code / Business Logic |
 | `backend_architect.md` | [`skills/backend_architect.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/skills/backend_architect.md) | 2353 | 2026-05-23 20:02:03 | Operational Skill Guideline / Blueprint |
 | `log_investigator.md` | [`skills/log_investigator.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/skills/log_investigator.md) | 1982 | 2026-05-23 20:02:12 | Operational Skill Guideline / Blueprint |
