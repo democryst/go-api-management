@@ -8,6 +8,7 @@ import (
     "net/http"
     "time"
 
+    "github.com/democryst/go-api-management/internal/adapters/telemetry"
     "github.com/democryst/go-api-management/internal/core/domain"
     "github.com/democryst/go-api-management/internal/core/services"
     "github.com/go-chi/chi/v5"
@@ -51,12 +52,14 @@ func (h *AuthHandler) Routes() chi.Router {
     r := chi.NewRouter()
 
     r.Use(CorrelationMiddleware)
+    r.Use(telemetry.MetricsMiddleware)
 
     // Public REST endpoints
     r.Get("/login", h.Login)
     r.Get("/callback", h.Callback)
     r.Post("/refresh", h.Refresh)
     r.Get("/health", h.Health)
+    r.Handle("/metrics", telemetry.MetricsHandler())
 
     // Authenticated REST endpoints (JWT verified)
     r.Group(func(r chi.Router) {

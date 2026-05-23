@@ -1,0 +1,186 @@
+openapi: 3.0.3
+info:
+  title: Go Secure Banking Money-Transfer Gateway
+  description: High-performance, multi-zone firewalled API Gateway for banking registrations and hardware enclave-signed ledger executions.
+  version: 1.0.0
+servers:
+  - url: https://api.bank.com
+    description: Production DMZ Gateway
+paths:
+  /auth/login:
+    get:
+      summary: Initiate OIDC PKCE redirect
+      description: Initiates PKCE OIDC login sequence and sets an ephemeral browser state cookie.
+      parameters:
+        - name: redirect_uri
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uri
+      responses:
+        '302':
+          description: Redirecting to Identity Provider
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: session_id=uuid; Path=/; HttpOnly; Secure; SameSite=Strict
+
+  /auth/callback:
+    get:
+      summary: Authentication callback handler
+      description: Verifies OIDC redirect state, destroys the single-use transient session row, and performs token exchanges.
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Authentication completed successfully
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: refresh_token=rottoken; Path=/; HttpOnly; Secure; SameSite=Strict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      email:
+                        type: string
+                        format: email
+                  access_token:
+                    type: string
+                  expires_in:
+                    type: integer
+        '401':
+          description: Unauthorized due to session expiration or state mismatch
+
+  /auth/register-device:
+    post:
+      summary: Register mobile hardware public key
+      description: Binds a client device's physical Secure Enclave public key to their authenticated profile after verifying App Attest/Play Integrity.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+                - public_key_pem
+                - algorithm
+                - platform
+                - attestation_token
+              properties:
+                id:
+                  type: string
+                public_key_pem:
+                  type: string
+                algorithm:
+                  type: string
+                  enum: [ECDSA_P256]
+                platform:
+                  type: string
+                  enum: [ios, android]
+                attestation_token:
+                  type: string
+      responses:
+        '200':
+          description: Device registered successfully
+        '403':
+          description: Device integrity token attestation failed
+
+  /transfer/initiate:
+    post:
+      summary: Initiate Secure Money-Transfer
+      description: DMZ endpoint accepting transactions, performing BFF Token Swap, and forwarding over intranet mTLS lines.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferPayload'
+      responses:
+        '200':
+          description: Transfer initiated and forwarded successfully
+        '500':
+          description: Intranet transaction execution failed
+
+  /private/transfers:
+    post:
+      summary: Private Intranet transfer executor
+      description: Resolves registered keys, verifies Secure Enclave signature (non-repudiation), and writes to the ledger.
+      security:
+        - InternalBearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferPayload'
+      responses:
+        '200':
+          description: Signature verified and ledger transaction finalized
+        '401':
+          description: Unauthorized or signature verification failed
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    InternalBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    TransferPayload:
+      type: object
+      required:
+        - id
+        - sender_account
+        - receiver_account
+        - amount_cents
+        - currency
+        - timestamp
+        - signature
+      properties:
+        id:
+          type: string
+        sender_account:
+          type: string
+          minLength: 6
+        receiver_account:
+          type: string
+          minLength: 6
+        amount_cents:
+          type: integer
+          minimum: 1
+        currency:
+          type: string
+          maxLength: 3
+        timestamp:
+          type: string
+          format: date-time
+        signature:
+          type: string

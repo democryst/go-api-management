@@ -130,7 +130,7 @@ func TestBankingHandler_RegisterDevice_Success(t *testing.T) {
 
 	reqBody := RegisterDeviceRequest{
 		ID:               "device-1",
-		PublicKeyPEM:     "PEM-BYTES",
+		PublicKeyPEM:     "-----BEGIN PUBLIC KEY-----\nMOCK-PEM-KEY\n-----END PUBLIC KEY-----",
 		Algorithm:        "ECDSA_P256",
 		Platform:         "ios",
 		AttestationToken: "valid-attestation",
@@ -154,7 +154,7 @@ func TestBankingHandler_RegisterDevice_Success(t *testing.T) {
 
 	// Verify key is persisted in repo
 	key, err := repo.GetKey(context.Background(), "device-1")
-	if err != nil || key.UserID != "auth0|test-user-1" || key.PublicKeyPEM != "PEM-BYTES" {
+	if err != nil || key.UserID != "auth0|test-user-1" || key.PublicKeyPEM != "-----BEGIN PUBLIC KEY-----\nMOCK-PEM-KEY\n-----END PUBLIC KEY-----" {
 		t.Errorf("key not saved properly: %v, err: %v", key, err)
 	}
 }
@@ -181,7 +181,7 @@ func TestBankingHandler_RegisterDevice_CompromisedAttestation(t *testing.T) {
 
 	reqBody := RegisterDeviceRequest{
 		ID:               "device-1",
-		PublicKeyPEM:     "PEM-BYTES",
+		PublicKeyPEM:     "-----BEGIN PUBLIC KEY-----\nMOCK-PEM-KEY\n-----END PUBLIC KEY-----",
 		Algorithm:        "ECDSA_P256",
 		Platform:         "ios",
 		AttestationToken: "compromised-token",

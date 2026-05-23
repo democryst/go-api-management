@@ -10,6 +10,8 @@ import (
 
 	"github.com/auth0/go-jwt-middleware/v3"
 	"github.com/auth0/go-jwt-middleware/v3/validator"
+	corehandler "github.com/democryst/go-api-management/internal/adapters/handler"
+	"github.com/democryst/go-api-management/internal/adapters/telemetry"
 	"github.com/democryst/go-api-management/internal/banking/domain"
 	"github.com/democryst/go-api-management/internal/banking/services"
 	"github.com/go-chi/chi/v5"
@@ -17,11 +19,12 @@ import (
 
 // BankingHandler wraps HTTP controllers for secure banking routes.
 type BankingHandler struct {
-	service     *services.BankingService
-	logger      *slog.Logger
-	auth0Domain string
-	apiAudience string
-	jwtProvider func(context.Context) (any, error)
+	service          *services.BankingService
+	logger           *slog.Logger
+	auth0Domain      string
+	apiAudience      string
+	jwtProvider      func(context.Context) (any, error)
+	policyMiddleware func(http.Handler) http.Handler
 }
 
 // NewBankingHandler constructs a new BankingHandler.
@@ -41,6 +44,12 @@ func NewBankingHandler(
 	}
 }
 
+// WithOPAMiddleware registers a fluid-injected embedded OPA authorization policy middleware.
+func (h *BankingHandler) WithOPAMiddleware(mw func(http.Handler) http.Handler) *BankingHandler {
+	h.policyMiddleware = mw
+	return h
+}
+
 // RegisterDeviceRequest defines the request body for binding a Secure Enclave public key.
 type RegisterDeviceRequest struct {
 	ID               string `json:"id"`
@@ -55,6 +64,12 @@ type RegisterDeviceRequest struct {
 // Space Complexity: O(1)
 func (h *BankingHandler) EdgeRoutes(jwtMiddleware func(http.Handler) http.Handler) chi.Router {
 	r := chi.NewRouter()
+
+	r.Use(telemetry.MetricsMiddleware)
+	r.Use(corehandler.SchemaValidationMiddleware(h.logger))
+	if h.policyMiddleware != nil {
+		r.Use(h.policyMiddleware)
+	}
 
 	// Authenticated Device & Transfer Operations
 	r.Group(func(r chi.Router) {
@@ -71,6 +86,12 @@ func (h *BankingHandler) EdgeRoutes(jwtMiddleware func(http.Handler) http.Handle
 // Space Complexity: O(1)
 func (h *BankingHandler) PrivateRoutes() chi.Router {
 	r := chi.NewRouter()
+
+	r.Use(telemetry.MetricsMiddleware)
+	r.Use(corehandler.SchemaValidationMiddleware(h.logger))
+	if h.policyMiddleware != nil {
+		r.Use(h.policyMiddleware)
+	}
 
 	// Secure Intranet Private Ledgers
 	r.Post("/private/transfers", h.ExecutePrivateTransfer)
