@@ -1,80 +1,89 @@
-# Requirements Specification: OAuth 2.0 + PKCE + Auth0 Gateway
+# Requirements Specification: Secure Banking Money-Transfer Gateway
 
-This document represents the formal requirements specification for the high-performance Go authentication gateway. All system designs, interface definitions, and implementations must trace back to these rules.
+This document represents the formal requirements specification for the high-performance Go Secure Banking API Gateway. All designs, network mappings, and code implementations must trace back to these rules.
 
-## 🎯 1. Scope & System Boundary
+---
 
-The authentication gateway provides a production-grade secure bridge between client applications and Auth0 as the Identity Provider (IdP) using the **Authorization Code Flow with PKCE (RFC 7636)**.
+## 🎯 1. Scope, Segmentation & Boundaries
+
+To comply with global financial regulations (PCI-DSS and PSD2), our gateway is segmented into two distinct, firewalled VPC network environments:
+
+```text
+  [ PUBLIC INTERNET ]                   [ DMZ / EDGE ZONE ]                 [ SECURE INTRANET ZONE ]
+                        
+ ┌──────────────────┐                  ┌──────────────────┐                  ┌───────────────────┐
+ │                  │                  │                  │                  │ Core Banking      │
+ │  Mobile Client   │───( HTTPS 443 )─►│  API Gateway &   │───( mTLS Peer )─►│ Transfer Service  │
+ │                  │                  │  BFF (Edge App)  │                  │ (Private IP Only) │
+ └──────────────────┘                  └──────────────────┘                  └───────────────────┘
+```
 
 ### In Scope
-* **RFC 7636 PKCE Flow**: Explicit authorization code exchange using `S256` hashing (plain text verifiers are strictly prohibited).
-* **Token Validation**: Signature verification using RS256 via Auth0 JWKS with 5-minute local caching.
-* **Refresh Token Rotation**: Automatic rotation with single-use reuse detection to mitigate token theft.
-* **OpenAPI 3.1 Documentation**: Clean endpoint definitions tagged with `x-usePkce: true`.
-* **PII Masking**: Mandatory logic-level masking on logging keys containing email addresses, names, or secret strings.
+* **SR-01 (Multi-Zone Topology)**: Network isolation separating the public-facing API Gateway (DMZ Zone) from the Core Money-Transfer Service (Private VPC Intranet).
+* **SR-02 (SafetyNet/App Attest)**: Verification of cryptographic device attestation tokens (Apple App Attest / Google Play Integrity) at the Edge DMZ before granting sessions.
+* **SR-03 (Token Swap Pattern)**: Translation of public Edge BFF tokens into highly privileged, short-lived, mTLS-bound Internal JWTs containing transactional scopes.
+* **SR-04 (Hardware Non-Repudiation)**: Directly verifying SHA-256 cryptographic signatures generated inside the client mobile device's Secure Enclave (iOS) or Keystore (Android), matching against registered public keys to execute transfers.
+* **SR-05 (Financial Account PII Redaction)**: Auto-masking logging wrapper types to prevent leakages of bank account details, routing codes, or card values.
 
 ### Out of Scope
-* Custom user registration UI or username/password store.
-* Session management for resource endpoints outside the authentication scope.
-* DPoP (Demonstrating Proof-of-Possession) or multi-tenant delegation support in this version.
+* Custom core banking ledger database engines.
+* Bank staff back-office account creation workflows.
+* External inter-bank clearing interfaces.
 
 ---
 
 ## 🛠️ 2. Functional Requirements
 
-### FR-01: PKCE Challenge Creation
-* The system must generate a cryptographically secure, random 43-character `code_verifier` (from the unreserved set `[A-Z][a-z][0-9]-._~`) using a high-entropy source (`crypto/rand`).
-* The corresponding `code_challenge` must be calculated using `BASE64URL-ENCODE(SHA256(ASCII(code_verifier)))` without padding.
+### FR-01: Device Attestation Checks (Edge Gate)
+* Before establishing an active OIDC PKCE session, the DMZ Edge Gateway must validate the device integrity token (Play Integrity / App Attest) to verify that the client app is untampered, genuine, and operating on non-jailbroken hardware.
 
-### FR-02: Secure Session Storing
-* The system must persist the ephemeral `state` and `code_verifier` temporarily in a PostgreSQL session table before redirecting the client to Auth0.
-* A cryptographically secure session key (UUIDv7) must be returned to the client as an HTTP-only, secure, `SameSite=Strict` session cookie.
+### FR-02: Public-to-Internal Token Swap (BFF Translator)
+* The public mobile app communicates strictly using short-lived, low-privilege Edge BFF session tokens.
+* When forwarding a money-transfer request, the DMZ Gateway verifies the BFF token, validates request parameters, and translates it by signing a highly privileged, short-lived **Internal JWT** containing specific transaction scopes (e.g. `scopes: ["transfer:execute"]`).
+* The internal request must be forwarded over private peer lines using **Mutual TLS (mTLS)** to the Money Transfer Service.
 
-### FR-03: Code-to-Token Exchange
-* Upon callback, the system must retrieve the session by its UUIDv7 cookie, validate the returned `state` against the stored state, and immediately delete the session from the DB.
-* The system must make an explicit egress HTTP POST call to Auth0's `/oauth/token` containing the `code`, `code_verifier`, `client_id`, and `client_secret` (if applicable) to receive the `TokenPair`.
-
-### FR-04: JWKS-Backed Token Validation
-* All secure endpoints must intercept requests, validate the RS256 JWT in the `Authorization: Bearer <token>` header, verify claims (`iss`, `aud`, `exp`, `nbf`), and extract the user's `sub` identifier.
-* The public keys must be retrieved from the Auth0 JWKS endpoint (`/.well-known/jwks.json`) and cached locally for **5 minutes** to prevent rate limits.
+### FR-03: Hardware Signature Verification (Non-Repudiation)
+* For executing money transfers, the mobile app must sign the transaction payload using the hardware-backed private key stored in the device's Secure Enclave.
+* The core Money Transfer service inside the Secure Intranet VPC must directly verify the payload's signature using the stored public key associated with that specific user account during device binding.
+* Even if the DMZ edge app is completely compromised, unauthorized money transfers must fail if they lack a valid Secure Enclave signature.
 
 ---
 
 ## 🔒 3. Data Security & Handling Classifications
 
-All application data must be handled according to its strict classification profile:
+All financial and credential data must be handled according to strict classification tables:
 
 | Data Type | Classification | Policy & Security Handling |
 | :--- | :--- | :--- |
-| **Access Token (JWT)** | Sensitive | Transmitted via `Authorization` header only. Never stored in logs or database tables. TLS 1.2+ mandatory on all transport paths. |
-| **Refresh Token** | Secret | Returned to client strictly in a secure, HTTP-only, `SameSite=Strict` cookie. Ephemeral storage in database only if needed for rotation lookup. |
-| **code_verifier** | Ephemeral Secret | In-memory only. Must never be written to persistent database, logs, or caches. Discarded immediately after token exchange. |
-| **User Email / Name** | PII | Must be parsed and masked before logging. (e.g., `p***@example.com` or `J*** D***`). |
-| **Auth0 Client Secret** | System Secret | Injected strictly via environment variables or secure credentials vaults. Never committed to source control or dumped in trace files. |
+| **BFF Session Token** | Ephemeral Secret | Valid only at the Edge DMZ. Transmitted via secure, HTTP-only, `SameSite=Strict` browser session cookies. |
+| **Internal JWT** | High Privilege Secret | Short-lived (< 1 minute), bound to mTLS peer connections. Never exposed to the public internet or logged. |
+| **Enclave Private Key** | Hardware Secret | Stored strictly inside the client device's physical Secure Enclave. Never transmitted, logged, or printed. |
+| **Enclave Public Key** | Cryptographic Asset | Persisted inside the Secure VPC Intranet database, tied strictly to the user identity profile. |
+| **Bank Account Numbers / PII** | Highly Sensitive PII | Must be redacted in all system logging paths. Account numbers must mask all digits except the first two and last four (e.g. `12******3456`). |
 
 ---
 
 ## 📊 4. Non-Functional Requirements & SLAs
 
 ### NFR-01: Latency Budgets
-* **JWT Local Validation**: p95 < 5ms, p99 < 15ms.
-* **Complete Login Redirect Initiation**: p95 < 30ms.
-* **Token Exchange / Refresh Processing (Excluding Auth0 Egress latency)**: p95 < 20ms.
+* **SafetyNet/App Attest Check**: p95 < 80ms.
+* **Token Swap Translation & Forwarding**: p95 < 15ms.
+* **Hardware Enclave Signature Verification**: p95 < 5ms.
 
-### NFR-02: High Availability & Fault Tolerance
-* Egress calls to Auth0 must utilize a circuit breaker (via `gobreaker`) configured with a fail-ratio of 50% over a 10-second window, preventing cascade failures.
-* Requests exceeding 3 seconds on egress calls must be aborted and gracefully returned as a system error (`AuthError`).
+### NFR-02: Zero-Trust Inter-Zone Egress
+* All connections leaving the DMZ Zone into the Secure Intranet VPC must utilize mutual TLS (mTLS) with standard CA-signed certificates and enforce strict IP whitelisting.
 
 ---
 
 ## 🧬 5. API Endpoints Specification
 
-* `GET /auth/login` - Initiates the authorization code flow, creates session verifiers, and redirects to Auth0.
-* `GET /auth/callback` - Callback handler that exchanges the authorization code + PKCE verifier for tokens.
-* `POST /auth/logout` - Revokes active sessions and clears the secure HTTP-only cookies.
-* `POST /auth/refresh` - Executes single-use refresh token rotation and issues a new `TokenPair`.
-* `GET /auth/userinfo` - Returns profile details (`UserIdentity`) for the active authorized session.
-* `GET /health` - Liveness/Readiness probe returning structural and DB connection status.
+### DMZ Gateway Endpoints (Public)
+* `POST /auth/register-device` - Binds a client device's Secure Enclave public key to an authenticated user profile.
+* `POST /auth/login` - Initiates session, verifies device attestation, sets cookies.
+* `POST /transfer/initiate` - Edge endpoint accepting money-transfer payloads with Secure Enclave signatures, swaps tokens, and forwards to Secure Intranet.
+
+### Private Core Banking Endpoints (Secure VPC Only)
+* `POST /private/transfers` - Receives internal JWTs, validates the Secure Enclave signature against stored keys, and executes the ledger transfer.
 
 ---
 *Last Updated: 2026-05-23*
