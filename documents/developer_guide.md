@@ -294,12 +294,63 @@ Verify that system logs automatically mask the bank accounts (e.g. `sender=12***
 
 ---
 
-## 🔄 Step 7: Synchronize Workspace Project Manifest
-Always run the repository indexer tool to update catalogs in `project_manifest.md`:
+## 🛡️ Step 7: Configure the Enterprise Shield Layers (OpenAPI, Valkey, OPA)
+
+To ensure that your newly created endpoints are securely validated, rate-limited, and authorized, you must extend the configurations in our gateway shield middlewares:
+
+### 1. Declare OpenAPI Schema Rules (`api/openapi.yaml`)
+Register the endpoint specifications and payload constraints inside our OpenAPI spec file. This enables the high-performance `SchemaValidationMiddleware` to automatically validate parameters:
+```yaml
+paths:
+  /transfer/accounts:
+    post:
+      summary: Retrieve authenticated user's active accounts list
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Successful accounts retrieval
+  /private/accounts:
+    post:
+      summary: Executed inside the intranet zone to fetch masked database details
+      security:
+        - InternalTokenAuth: []
+      responses:
+        '200':
+          description: Database accounts list returned
+```
+
+### 2. Configure Distributed Valkey Rate Limiting
+The rate limiter automatically hashes user OIDC Subjects (`user:<sub-id>`) or unauthenticated network IPs (`ip:<remote-addr>`) using SHA-256 before compiling Valkey keys. This completely mitigates PII leak risk in Redis/Valkey cache stores:
+* If you need custom bucket settings, update `RateLimiterConfig` inside `main.go`. The default configuration uses a robust sliding-window bucket.
+
+### 3. Configure Dynamic OPA Rego Policies (`policies/policy.rego`)
+Write custom authorization rules inside our Rego policy file. The background file watcher daemon utilizes `fsnotify` to instantly hot-reload and compile these changes into the embedded evaluator with **zero server downtime**:
+```rego
+# Permitted edge accounts lookup for authenticated subjects
+allow {
+    input.path == "/transfer/accounts"
+    input.method == "POST"
+    input.claims.sub != ""
+}
+
+# Permitted private intranet lookup requiring custom read scope
+allow {
+    input.path == "/private/accounts"
+    input.method == "POST"
+    has_scope(input.claims.scopes, "accounts:read")
+}
+```
+
+---
+
+## 🔄 Step 8: Synchronize Workspace Project Manifest
+Always run the repository indexer tool to update catalogs in `project_manifest.md` before compiling:
 ```bash
 python3 tools/indexer.py
 ```
 
 ---
-*Extension Guide Version: 1.0.0*
-*Last Optimized: 2026-05-23*
+*Extension Guide Version: 1.1.0*
+*Last Optimized: 2026-05-24*
+

@@ -1,6 +1,6 @@
 # Project Manifest: go-api-management
 
-Generated at: `2026-05-23 21:37:11`
+Generated at: `2026-05-24 19:11:15`
 
 ## 🏛️ Directory Tree Structure
 
@@ -85,7 +85,8 @@ go-api-management/
 │   └── indexer.py
 ├── AI_SYSTEM_MANIFEST.md
 ├── go.mod
-└── go.sum
+├── go.sum
+└── README.md
 ```
 
 ## 📂 Cataloged Repository Files
@@ -93,6 +94,7 @@ go-api-management/
 | File Name | Rel Path | Size (Bytes) | Last Modified | Architectural Purpose |
 | :--- | :--- | :--- | :--- | :--- |
 | `AI_SYSTEM_MANIFEST.md` | [`AI_SYSTEM_MANIFEST.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/AI_SYSTEM_MANIFEST.md) | 2449 | 2026-05-23 19:53:51 | Repository Core Metadata |
+| `README.md` | [`README.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/README.md) | 8394 | 2026-05-24 19:11:10 | Repository Core Metadata |
 | `go.mod` | [`go.mod`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/go.mod) | 5885 | 2026-05-23 21:33:53 | Repository Core Metadata |
 | `go.sum` | [`go.sum`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/go.sum) | 28883 | 2026-05-23 21:33:53 | Repository Core Metadata |
 | `schema.sql` | [`migrations/schema.sql`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/migrations/schema.sql) | 1205 | 2026-05-23 21:00:30 | Repository Core Metadata |
@@ -111,7 +113,7 @@ go-api-management/
 | `middleware.go` | [`internal/adapters/handler/middleware.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/handler/middleware.go) | 2990 | 2026-05-23 20:47:36 | Go Source Code / Business Logic |
 | `policy_middleware.go` | [`internal/adapters/handler/policy_middleware.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/handler/policy_middleware.go) | 6525 | 2026-05-23 21:36:14 | Go Source Code / Business Logic |
 | `policy_middleware_test.go` | [`internal/adapters/handler/policy_middleware_test.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/handler/policy_middleware_test.go) | 5274 | 2026-05-23 21:36:55 | Go Source Code / Business Logic |
-| `rate_limiter.go` | [`internal/adapters/handler/rate_limiter.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/handler/rate_limiter.go) | 6018 | 2026-05-23 21:35:24 | Go Source Code / Business Logic |
+| `rate_limiter.go` | [`internal/adapters/handler/rate_limiter.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/handler/rate_limiter.go) | 6038 | 2026-05-23 21:41:55 | Go Source Code / Business Logic |
 | `rate_limiter_test.go` | [`internal/adapters/handler/rate_limiter_test.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/handler/rate_limiter_test.go) | 6557 | 2026-05-23 21:35:07 | Go Source Code / Business Logic |
 | `schema_middleware.go` | [`internal/adapters/handler/schema_middleware.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/handler/schema_middleware.go) | 5439 | 2026-05-23 21:28:45 | Go Source Code / Business Logic |
 | `pkce.go` | [`internal/adapters/crypto/pkce.go`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/internal/adapters/crypto/pkce.go) | 1324 | 2026-05-23 20:29:17 | Go Source Code / Business Logic |
@@ -137,9 +139,9 @@ go-api-management/
 | `log_investigator.md` | [`skills/log_investigator.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/skills/log_investigator.md) | 1982 | 2026-05-23 20:02:12 | Operational Skill Guideline / Blueprint |
 | `obsidian_manager.md` | [`skills/obsidian_manager.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/skills/obsidian_manager.md) | 1814 | 2026-05-23 20:02:17 | Operational Skill Guideline / Blueprint |
 | `perf_profiler.md` | [`skills/perf_profiler.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/skills/perf_profiler.md) | 1708 | 2026-05-23 20:02:07 | Operational Skill Guideline / Blueprint |
-| `developer_guide.md` | [`documents/developer_guide.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/documents/developer_guide.md) | 11773 | 2026-05-23 21:18:36 | Repository Core Metadata |
-| `end_user_documentation.md` | [`documents/end_user_documentation.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/documents/end_user_documentation.md) | 12593 | 2026-05-23 21:16:45 | Repository Core Metadata |
-| `handover_document.md` | [`documents/handover_document.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/documents/handover_document.md) | 8271 | 2026-05-23 21:16:52 | Repository Core Metadata |
+| `developer_guide.md` | [`documents/developer_guide.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/documents/developer_guide.md) | 13888 | 2026-05-24 19:10:28 | Repository Core Metadata |
+| `end_user_documentation.md` | [`documents/end_user_documentation.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/documents/end_user_documentation.md) | 13726 | 2026-05-24 19:10:41 | Repository Core Metadata |
+| `handover_document.md` | [`documents/handover_document.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/documents/handover_document.md) | 9773 | 2026-05-24 19:11:01 | Repository Core Metadata |
 | `adr-001-session-management.md` | [`tech/adr-001-session-management.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/tech/adr-001-session-management.md) | 3745 | 2026-05-23 20:14:47 | Repository Core Metadata |
 | `adr-002-jwks-caching.md` | [`tech/adr-002-jwks-caching.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/tech/adr-002-jwks-caching.md) | 2529 | 2026-05-23 20:14:54 | Repository Core Metadata |
 | `design.md` | [`tech/design.md`](file:///Volumes/SSD990PRO2TB/workspace/go-api-management/tech/design.md) | 6686 | 2026-05-23 20:15:01 | Repository Core Metadata |

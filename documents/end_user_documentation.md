@@ -260,14 +260,25 @@ class AndroidKeystoreSigner {
 
 When interacting with the Secure Banking Gateway, applications should handle the following HTTP error responses gracefully:
 
+### Rate Limiting Telemetry Headers
+Every response from the DMZ Edge Gateway carries these standard headers to let client applications dynamically track their rate-limit quotas:
+* `X-RateLimit-Limit`: Maximum requests allowed within the sliding window.
+* `X-RateLimit-Remaining`: Remaining request allowance inside the current window.
+* `Retry-After`: Emitted on `429 Too Many Requests`, representing the sleep cooldown (in seconds) the mobile client must observe before retrying.
+
+### Standard Response Taxonomy
+
 | Status Code | Error Message | Scenario | Client Action |
 | :--- | :--- | :--- | :--- |
 | **`400 Bad Request`** | `"Invalid request body"` or `"Missing required parameters"` | The transfer payload or binding payload has malformed formats or missing properties. | Assert correct JSON parsing and parameters presence before calling edge APIs. |
 | **`401 Unauthorized`** | `"unauthorized: missing token claims in request context"` | The edge `access_token` bearer JWT is expired or missing. | Initiate OIDC PKCE token refresh cycle or prompt user login. |
-| **`403 Forbidden`** | `"device integrity check failed: ..."` | The device attestation token (App Attest/Play Integrity) failed verification, indicating tampered runtime or jailbreak. | Restrict execution. Warn the user that banking features are unavailable on modified operating systems. |
+| **`403 Forbidden` (Attestation)** | `"device integrity check failed: ..."` | The device attestation token (App Attest/Play Integrity) failed verification, indicating tampered runtime or jailbreak. | Restrict execution. Warn the user that banking features are unavailable on modified operating systems. |
+| **`403 Forbidden` (OPA Policy)** | `"access denied by system security policy"` | Dynamic OPA evaluation rejected the request (e.g. transfer >= $10,000 initiated by a user lacking the `transfer:high_value` scope). | Advise the user that the transaction bounds exceed standard authorization. Offer scope elevation or review amount. |
+| **`429 Too Many Requests`** | `"rate limit exceeded, please retry later"` | Distributed Valkey Token Bucket rate limits are exceeded for this user or IP. | Capture the `Retry-After` header value, disable the submit button, and schedule an exponential backoff retry. |
 | **`500 Internal Server Error`** | `"unauthorized: cryptographic secure enclave signature is invalid or tampered"` | The transaction's biometric signature failed verification against registered keys. | Prompt TouchID/FaceID again. Re-canonicalize the byte block to ensure no mismatch in timestamp or amount formatting. |
 | **`503 Service Unavailable`** | `"transfer execution failed: ..."` | The edge BFF gateway experienced network timeouts to secure intranet zones, or the circuit breaker tripped. | Wait and retry after exponential backoff. Do not spam requests. |
 
 ---
-*Manual Version: 1.0.0*
-*Last Reviewed: 2026-05-23*
+*Manual Version: 1.1.0*
+*Last Reviewed: 2026-05-24*
+
